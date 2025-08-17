@@ -4,21 +4,21 @@ import plotly.graph_objects as go
 from datetime import timedelta
 
 st.set_page_config(page_title="Quotex Signals", layout="wide")
-st.title("?? Quotex Signals Analyzer")
-st.markdown("???? ??? CSV (???? ?????) ?????? ??????? ???????? ????? ???????? ?????? ???????.")
+st.title("📊 Quotex Signals Analyzer")
+st.markdown("ارفع ملف CSV (شموع دقيقة) وسيحسب التطبيق المؤشرات ويعرض الإشارات والرسم البياني.")
 
-uploaded_file = st.file_uploader("???? ??? CSV", type=["csv"])
+uploaded_file = st.file_uploader("ارفع ملف CSV", type=["csv"])
 col1, col2 = st.columns([3,1])
 
 with col2:
-    st.header("???????")
-    tz_offset = st.number_input("????? ??????? (?????)", value=1)
+    st.header("إعدادات")
+    tz_offset = st.number_input("تعويض التوقيت (ساعات)", value=1)
     sma_fast = st.number_input("SMA_fast", value=50)
     sma_slow = st.number_input("SMA_slow", value=200)
     rsi_period = st.number_input("RSI period", value=14)
     bb_period = st.number_input("Bollinger period", value=20)
     bb_k = st.number_input("Bollinger K", value=2.0)
-    analyze_btn = st.button("?? ??? ?????")
+    analyze_btn = st.button("🔍 حلل الملف")
 
 def compute_rsi(series, period):
     delta = series.diff()
@@ -39,7 +39,7 @@ if uploaded_file and analyze_btn:
         df[col] = pd.to_numeric(df[col], errors='coerce')
     df = df.dropna(subset=['open','high','low','close'])
 
-    # ????????
+    # المؤشرات
     df[f'sma_{sma_fast}'] = df['close'].rolling(sma_fast).mean()
     df[f'sma_{sma_slow}'] = df['close'].rolling(sma_slow).mean()
     df['rsi'] = compute_rsi(df['close'], int(rsi_period))
@@ -48,7 +48,7 @@ if uploaded_file and analyze_btn:
     df['bb_upper'] = df['bb_mid'] + bb_k * df['bb_std']
     df['bb_lower'] = df['bb_mid'] - bb_k * df['bb_std']
 
-    # ?????? ?????
+    # إشارات بسيطة
     signals = []
     for i in range(1, len(df)):
         prev_fast = df[f'sma_{sma_fast}'].iat[i-1]
@@ -64,14 +64,14 @@ if uploaded_file and analyze_btn:
         if sig:
             signals.append({"timestamp": df['timestamp_local'].iat[i], "signal": sig, "price": df['close'].iat[i]})
 
-    st.subheader("?? ????????")
+    st.subheader("📌 الإشارات")
     if signals:
         for s in signals[-50:]:
-            st.success(f"{s['timestamp']} ? {s['signal']} @ {s['price']}")
+            st.success(f"{s['timestamp']} → {s['signal']} @ {s['price']}")
     else:
-        st.info("?? ???? ?????? ????.")
+        st.info("لا توجد إشارات قوية.")
 
-    st.subheader("?? ????? ???????")
+    st.subheader("📈 الرسم البياني")
     fig = go.Figure(data=[go.Candlestick(
         x=df['timestamp_local'],
         open=df['open'],
@@ -82,3 +82,4 @@ if uploaded_file and analyze_btn:
     fig.add_trace(go.Scatter(x=df['timestamp_local'], y=df[f'sma_{sma_fast}'], name=f"SMA{int(sma_fast)}"))
     fig.add_trace(go.Scatter(x=df['timestamp_local'], y=df[f'sma_{sma_slow}'], name=f"SMA{int(sma_slow)}"))
     st.plotly_chart(fig, use_container_width=True)
+
